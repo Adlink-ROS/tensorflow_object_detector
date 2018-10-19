@@ -5,7 +5,6 @@
 
 import numpy as np
 import os
-import six.moves.urllib as urllib
 import sys
 import tarfile
 try:
@@ -32,8 +31,6 @@ from cv_bridge import CvBridge, CvBridgeError
 from vision_msgs.msg import Detection2D, Detection2DArray, ObjectHypothesisWithPose
 from copy import deepcopy
 
-#for time
-import time
 
 # This is needed utils is stored in object_detection folder.
 # sys.path.append('object_detection')
@@ -45,23 +42,23 @@ from object_detection.utils import label_map_util
 from object_detection.utils import visualization_utils as vis_util
 
 # SET FRACTION OF GPU YOU WANT TO USE HERE
-GPU_FRACTION = 0.7
+GPU_FRACTION = 0.8
 
 # What model to use
 ######### CHANGE THE MODEL NAME HERE ############
-MODEL_NAME =  'ssd_mobilenet_v1_coco_11_06_2017'
+MODEL_NAME =  'inference_graph_200000'
 # By default models are stored in data/models/ 
 MODEL_PATH = os.path.join(os.path.dirname(sys.path[0]),'data','models' , MODEL_NAME)
 
 # Path to frozen detection graph. This is the actual model that is used for the object detection.
 PATH_TO_CKPT = MODEL_PATH + '/frozen_inference_graph.pb'
 ######### CHANGE THE LABEL NAME HERE ###########
-LABEL_NAME = 'mscoco_label_map.pbtxt'
+LABEL_NAME = 'labelmap.pbtxt'
 # List of the strings that is used to add correct label for each box.
 PATH_TO_LABELS = os.path.join(os.path.dirname(sys.path[0]),'data','labels', LABEL_NAME)
 
 ###CHANGE NUMBER OF CLASSES HERE ####
-NUM_CLASSES = 90
+NUM_CLASSES = 4
 
 detection_graph = tf.Graph()
 with detection_graph.as_default():
@@ -91,18 +88,20 @@ with detection_graph.as_default():
         self.object_pub = rospy.Publisher("objects", Detection2DArray, queue_size=1)
         self.bridge = CvBridge()
         self.image_sub = rospy.Subscriber("image", Image, self.image_cb, queue_size=1, buff_size=2**24)
-        
+
       def image_cb(self, data):
         objArray = Detection2DArray()
         try:
+ 
           cv_image = self.bridge.imgmsg_to_cv2(data, "bgr8")
+  
         except CvBridgeError as e:
           print(e)
         image=cv2.cvtColor(cv_image,cv2.COLOR_BGR2RGB)
-        
         # the array based representation of the image will be used later in order to prepare the
         # result image with boxes and labels on it.
         image_np = np.asarray(image)
+	
         # Expand dimensions since the model expects images to have shape: [1, None, None, 3]
         image_np_expanded = np.expand_dims(image_np, axis=0)
         image_tensor = detection_graph.get_tensor_by_name('image_tensor:0')
@@ -136,7 +135,7 @@ with detection_graph.as_default():
           
         self.object_pub.publish(objArray) 
         
-        img=cv2.cvtColor(image_np, cv2.COLOR_BGR2RGB)      
+        img=cv2.cvtColor(image_np, cv2.COLOR_BGR2RGB)   
         image_out = Image()
         try:
           image_out = self.bridge.cv2_to_imgmsg(img,"bgr8")
@@ -160,8 +159,8 @@ with detection_graph.as_default():
         obj.results.append(obj_hypothesis)
         obj.bbox.size_y = int((dimensions[2]-dimensions[0])*image_height)
         obj.bbox.size_x = int((dimensions[3]-dimensions[1] )*image_width)
-        obj.bbox.center.x = int((dimensions[1] + dimensions [3])*image_height/2)
-        obj.bbox.center.y = int((dimensions[0] + dimensions[2])*image_width/2)
+        obj.bbox.center.x = int((dimensions[1] + dimensions [3])*image_width/2)
+        obj.bbox.center.y = int((dimensions[0] + dimensions[2])*image_height/2)
 
         return obj 
 

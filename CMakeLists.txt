@@ -8,7 +8,15 @@ include(ExternalData)
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
+find_package(PCL REQUIRED)
+find_package(OpenCV REQUIRED)
 find_package(catkin REQUIRED COMPONENTS
+  roscpp 
+  pcl_conversions pcl_ros 
+  image_transport tf 
+  geometry_msgs visualization_msgs 
+  image_geometry message_generation
+  move_base_msgs actionlib 
   cv_bridge
   rospy
   sensor_msgs
